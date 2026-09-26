@@ -479,4 +479,504 @@ function createPins() {
         "Chic everyday outfit inspiration",
 
       description:
-        "Simple and polished outfit inspiration for a modern wardrobe. Paid link. #
+        "Simple and polished outfit inspiration for a modern wardrobe. Paid link. #ad",
+
+      keywords: [
+        product.category,
+        "women's outfit ideas",
+        "fall outfits",
+        "capsule wardrobe",
+        "everyday style"
+      ],
+
+      board:
+        boards[i],
+
+      tagTopics: [
+        "Women's Fashion",
+        "Outfit Ideas",
+        "Capsule Wardrobe"
+      ],
+
+      altText:
+        "Woman wearing a stylish " +
+        product.category +
+        " outfit",
+
+      affiliateLink:
+        "https://www.amazon.com/dp/" +
+        product.asin +
+        "?tag=evafinds04f-20",
+
+      aiStatus:
+        "Not modified",
+
+      date:
+        findSlot(types[i]),
+
+      time:
+        [
+          "18:00",
+          "19:00",
+          "20:00"
+        ][i]
+    };
+
+    state.pins.push(pin);
+
+    if (!state.schedule[pin.date]) {
+      state.schedule[pin.date] = [];
+    }
+
+    state.schedule[pin.date].push(pin);
+  }
+
+  saveData();
+
+  state.detail = null;
+  state.page = "pins";
+
+  render();
+}
+
+function findSlot(type) {
+  const date = new Date();
+
+  for (let i = 0; i < 30; i++) {
+
+    const key =
+      date.getFullYear() +
+      "-" +
+      String(
+        date.getMonth() + 1
+      ).padStart(2, "0") +
+      "-" +
+      String(
+        date.getDate()
+      ).padStart(2, "0");
+
+    const list =
+      state.schedule[key] || [];
+
+    const linkCount =
+      list.filter(
+        function (pin) {
+          return pin.type === "LINK";
+        }
+      ).length;
+
+    if (
+      list.length < 3 &&
+      (
+        type !== "LINK" ||
+        linkCount < 1
+      )
+    ) {
+      return key;
+    }
+
+    date.setDate(
+      date.getDate() + 1
+    );
+  }
+
+  return todayKey();
+}
+
+function renderPins() {
+  if (state.pins.length === 0) {
+    return `
+      <h1>
+        Mani Pini
+      </h1>
+
+      <section class="card">
+
+        <p class="meta">
+          Vēl nav izveidotu Pin.
+        </p>
+
+      </section>
+    `;
+  }
+
+  return `
+    <h1>
+      Mani Pini
+    </h1>
+
+    <section class="card">
+
+      ${state.pins.map(
+        function (pin) {
+
+          return `
+            <article class="pin-card">
+
+              <img
+                src="${pin.image}"
+                alt=""
+              >
+
+              <div>
+
+                <span
+                  class="badge ${
+                    pin.type === "LINK"
+                      ? "link"
+                      : "save"
+                  }"
+                >
+                  ${pin.type}
+                </span>
+
+                <h3>
+                  ${esc(pin.title)}
+                </h3>
+
+                <p class="meta">
+                  ${esc(pin.board)}
+                  ·
+                  ${formatDate(pin.date)}
+                  ·
+                  ${esc(pin.time)}
+                </p>
+
+                <p class="meta">
+                  ${esc(pin.description)}
+                </p>
+
+                <div class="ai">
+                  AI: ${esc(pin.aiStatus)}
+                </div>
+
+              </div>
+
+            </article>
+          `;
+        }
+      ).join("")}
+
+    </section>
+  `;
+}
+
+function renderSchedule() {
+  const dates =
+    Object.keys(
+      state.schedule
+    ).sort();
+
+  return `
+    <h1>
+      Grafiks
+    </h1>
+
+    <section class="card">
+
+      <p class="meta">
+        Maksimums 3 Pin dienā
+        un 1 LINK Pin dienā.
+      </p>
+
+      ${
+        dates.length === 0
+          ? `
+            <p class="meta">
+              Grafiks vēl ir tukšs.
+            </p>
+          `
+          : dates.map(
+              function (date) {
+
+                const items =
+                  state.schedule[date] || [];
+
+                return `
+                  <div>
+
+                    <div class="day-head">
+
+                      <h3>
+                        ${formatDate(date)}
+                      </h3>
+
+                      <b>
+                        ${items.length}/3
+                      </b>
+
+                    </div>
+
+                    ${items.map(
+                      function (pin) {
+
+                        return `
+                          <div class="slot">
+
+                            <span>
+                              <b>
+                                ${pin.type}
+                              </b>
+
+                              ·
+
+                              ${esc(
+                                pin.title
+                              )}
+                            </span>
+
+                            <span>
+                              ${esc(
+                                pin.time
+                              )}
+                            </span>
+
+                          </div>
+                        `;
+                      }
+                    ).join("")}
+
+                  </div>
+                `;
+              }
+            ).join("")
+      }
+
+    </section>
+  `;
+}
+
+function renderMore() {
+  return `
+    <h1>
+      Vairāk
+    </h1>
+
+    <section class="card">
+
+      <h2>
+        Iestatījumi
+      </h2>
+
+      <p class="meta">
+        Amazon Partner Tag:
+        evafinds04f-20
+      </p>
+
+      <p class="meta">
+        Amazon API:
+        testa režīms
+      </p>
+
+      <p class="meta">
+        Boards:
+        ${boards.join(" · ")}
+      </p>
+
+    </section>
+  `;
+}
+
+function bind() {
+
+  document
+    .querySelectorAll(
+      "[data-page]"
+    )
+    .forEach(
+      function (button) {
+
+        button.onclick =
+          function () {
+
+            state.page =
+              button.dataset.page;
+
+            state.detail = null;
+
+            render();
+          };
+      }
+    );
+
+  document
+    .querySelectorAll(
+      "[data-action]"
+    )
+    .forEach(
+      function (button) {
+
+        button.onclick =
+          function () {
+
+            const action =
+              button.dataset.action;
+
+            if (
+              action === "home"
+            ) {
+
+              state.page = "home";
+              state.detail = null;
+              render();
+
+            }
+
+            else if (
+              action === "products"
+            ) {
+
+              state.page = "products";
+              state.detail = null;
+              render();
+
+            }
+
+            else if (
+              action === "pins"
+            ) {
+
+              state.page = "pins";
+              state.detail = null;
+              render();
+
+            }
+
+            else if (
+              action === "schedule"
+            ) {
+
+              state.page = "schedule";
+              state.detail = null;
+              render();
+
+            }
+
+            else if (
+              action === "more"
+            ) {
+
+              state.page = "more";
+              state.detail = null;
+              render();
+
+            }
+
+            else if (
+              action === "search"
+            ) {
+
+              render();
+
+            }
+
+            else if (
+              action === "create"
+            ) {
+
+              createPins();
+
+            }
+
+          };
+      }
+    );
+
+  document
+    .querySelectorAll(
+      "[data-product]"
+    )
+    .forEach(
+      function (button) {
+
+        button.onclick =
+          function () {
+
+            const product =
+              state.products.find(
+                function (item) {
+                  return (
+                    item.asin ===
+                    button.dataset.product
+                  );
+                }
+              );
+
+            if (!product) {
+              return;
+            }
+
+            state.detail =
+              JSON.parse(
+                JSON.stringify(product)
+              );
+
+            state.detail.selected = [
+              0,
+              1,
+              2
+            ];
+
+            render();
+
+          };
+      }
+    );
+
+  document
+    .querySelectorAll(
+      "[data-image]"
+    )
+    .forEach(
+      function (button) {
+
+        button.onclick =
+          function () {
+
+            const index =
+              Number(
+                button.dataset.image
+              );
+
+            let selected =
+              state.detail.selected || [];
+
+            const existing =
+              selected.indexOf(index);
+
+            if (existing >= 0) {
+
+              selected.splice(
+                existing,
+                1
+              );
+
+            }
+
+            else if (
+              selected.length < 3
+            ) {
+
+              selected.push(index);
+
+            }
+
+            else {
+
+              selected.shift();
+              selected.push(index);
+
+            }
+
+            state.detail.selected =
+              selected;
+
+            render();
+
+          };
+      }
+    );
+}
+
+loadData();
+render();
